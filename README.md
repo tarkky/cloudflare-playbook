@@ -845,12 +845,26 @@ Workers 里的自定义指标和事件分析引擎。
 
 ## 4. 开源项目
 
-想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批跑在 Cloudflare 上的开源项目，每个附一句点评。标「推荐」的是同类里优先看的那个。想找更多没收录的，拉到本节末尾看发现入口。
+想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批真正使用 Cloudflare 能力、文档相对完整、仍有维护价值的开源项目。标「推荐」的是同类里优先看的那个。
+
+开源项目更适合拿来学架构和缩短起步时间，不等于可以不审代码直接上线。先看最近提交、部署文档、数据迁移和备份路径，再决定是直接用、二次开发，还是只吸收其中一个模块。
+
+| 你要做什么 | 第一选择 | 先学什么 | 主要取舍 |
+| --- | --- | --- | --- |
+| 新建标准 Worker / 全栈项目 | `cloudflare/templates` | 官方绑定、构建和部署方式 | 模板是起点，不是完整产品 |
+| 有状态 AI Agent | `cloudflare/agents` | Durable Objects 承载会话和状态 | 先搞清 Agent 与普通 Worker 的边界 |
+| 给 Worker API 加 OAuth | `cloudflare/workers-oauth-provider` | OAuth 2.1、PKCE、token 生命周期 | 登录页面和用户身份仍要自己实现 |
+| 做 OpenAPI API | `cloudflare/chanfana` + Hono | schema、校验、类型推导和文档生成 | 不要为了一个简单 endpoint 引入整套抽象 |
+| 做实时协作 / WebSocket | `cloudflare/partykit` | PartyServer、PartySocket、Durable Objects | 部分包仍在快速演进，升级前看 changelog |
+| 让 AI 读写 Cloudflare 账号 | `cloudflare/mcp-server-cloudflare` | typed tools、日志和配置诊断 | 写操作权限要按最小范围授权 |
 
 ### 官方仓库和模板
 
 - [cloudflare/templates](https://github.com/cloudflare/templates)（推荐）：官方模板总库，`npm create cloudflare@latest` 或 Dashboard 直接创建。重点看 `d1-template`、`r2-explorer-template`、`durable-chat-template`、`llm-chat-app-template`、`react-router-hono-fullstack-template`、`saas-admin-template`、`workflows-starter-template`、`containers-template`。
 - [cloudflare/agents](https://github.com/cloudflare/agents)：官方 Agents SDK 示例，核心是 Durable Objects 承载有状态 Agent，会话、状态、存储和生命周期都值得看。
+- [cloudflare/workers-oauth-provider](https://github.com/cloudflare/workers-oauth-provider)：官方 OAuth 2.1 Provider 框架，内置 PKCE、token 和 client 管理，适合给 Worker API 或远程 MCP 补授权层；它不负责你的登录 UI 和用户体系。
+- [cloudflare/mcp-server-cloudflare](https://github.com/cloudflare/mcp-server-cloudflare)：官方 Cloudflare MCP Servers 集合，覆盖文档、Bindings、Builds、Observability、Browser Rendering 等能力。适合研究 AI 如何读配置、查日志和做受控操作，不要把高权限写工具默认暴露给所有客户端。
+- [cloudflare/partykit](https://github.com/cloudflare/partykit)：Cloudflare 官方实时应用工具仓库，重点看 PartyServer、PartySocket 和 Yjs/CRDT 协作示例；底层仍是 Durable Objects，适合聊天室、协同编辑和实时状态同步。
 - [cloudflare/vibesdk](https://github.com/cloudflare/vibesdk)：官方 AI web app generator，适合研究"AI 编程平台自己怎么部署在 Cloudflare 上"。
 - [cloudflare/moltworker](https://github.com/cloudflare/moltworker)：OpenClaw 跑在 Cloudflare Sandbox 的实验项目，适合看 Containers/Sandbox 和 AI assistant 怎么组合；偏实验，不适合作为普通项目起步模板。
 - [cloudflare/workers-sdk](https://github.com/cloudflare/workers-sdk)：Wrangler 所在仓库，查 CLI、构建和部署生态。
@@ -939,11 +953,12 @@ Workers 里的自定义指标和事件分析引擎。
 ### Hono、API 和 SaaS Starter
 
 - [honojs/hono](https://github.com/honojs/hono)（推荐 API 框架）：不是 Cloudflare 专属项目，但已经是 Workers API 生态的核心框架，适合做 REST API、Webhook、MCP Server 和 BFF。
+- [cloudflare/chanfana](https://github.com/cloudflare/chanfana)（推荐 OpenAPI）：给 Hono、itty-router 等路由器补 OpenAPI 3/3.1 schema、请求校验、类型推导和自动文档。已有 Hono 项目可以渐进接入，不必重写旧路由。
 - [supermemoryai/cloudflare-saas-stack](https://github.com/supermemoryai/cloudflare-saas-stack)（推荐 SaaS 骨架）：把 Cloudflare D1、Pages、鉴权、样式、存储打包成可部署 SaaS 骨架，适合做产品原型。
 - [supermemoryai/backend-api-kit](https://github.com/supermemoryai/backend-api-kit)：Hono + Workers + D1 + Drizzle 的可变现 API 后端模板。
 - [ifindev/fullstack-next-cloudflare](https://github.com/ifindev/fullstack-next-cloudflare)：Next.js 15 + Workers + D1 + R2 + Better Auth，适合看 Next.js 全栈怎么迁到 Cloudflare。
 - [alwaysnomads/better-hono](https://github.com/alwaysnomads/better-hono)：Hono + Better Auth + Drizzle + Workers 的轻量 starter。
-- [cloudflare/templates](https://github.com/cloudflare/templates) 里的 `react-router-hono-fullstack-template`、`react-postgres-fullstack-template`、`saas-admin-template`：官方全栈模板优先级高于低星个人 starter。
+- 官方全栈起步优先回到上方 [cloudflare/templates](https://github.com/cloudflare/templates) 的 `react-router-hono-fullstack-template`、`react-postgres-fullstack-template` 和 `saas-admin-template`，再决定是否需要个人 starter。
 
 ### 网络和开发工具
 
@@ -951,8 +966,6 @@ Workers 里的自定义指标和事件分析引擎。
 
 - [XIU2/CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest)：Cloudflare CDN 延迟和速度测试工具，适合网络排查，不适合当应用模板。
 - [WisdomSky/Cloudflared-web](https://github.com/WisdomSky/Cloudflared-web)：cloudflared CLI 的 Web UI 封装，适合管理 Tunnel。
-- [cloudflare/workers-sdk](https://github.com/cloudflare/workers-sdk)：Wrangler、Miniflare 等开发工具源头。
-- [cloudflare/workerd](https://github.com/cloudflare/workerd)：Workers runtime，适合理解兼容性边界。
 - [alexpota/deploy-mcp](https://github.com/alexpota/deploy-mcp)：AI 助手可读的部署状态追踪器，支持 Cloudflare Pages 场景。
 - [nicepkg/shotog](https://github.com/nicepkg/shotog)：Workers 上的 OG image 生成 API，适合做边缘截图/图片生成小服务。
 - [jiacai2050/edgebin](https://github.com/jiacai2050/edgebin)：类似 httpbin 的边缘 HTTP 测试服务。
