@@ -5,7 +5,8 @@
 pnpm dev
 
 # 检查
-pnpm build
+pnpm check
+pnpm types
 pnpm preview
 
 # 生成给 AI 读取的 llm.txt

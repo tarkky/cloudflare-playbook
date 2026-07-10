@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "cloudflare-playbook",
 	"main": "./src/index.ts",
-	"compatibility_date": "2026-06-20",
+	"compatibility_date": "2026-07-10",
 	"assets": {
 		"directory": "./docs/.vitepress/dist",
 		"binding": "ASSETS",
@@ -38,6 +38,7 @@
 		}
 	],
 	"observability": {
-		"enabled": true
+		"enabled": true,
+		"head_sampling_rate": 1
 	}
 }

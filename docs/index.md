@@ -1,5 +1,6 @@
 ---
 title: Cloudflare 实战手册
+description: Cloudflare 功能全景、AI 编程工作流、计费额度、架构模式与生产避坑指南。
 outline: deep
 ---
 

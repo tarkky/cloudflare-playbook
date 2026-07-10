@@ -1,5 +1,6 @@
 ---
 title: Cloudflare Agents
+description: 用 Cloudflare Agents SDK 构建有入口、有状态、能定时、可上线的长期运行 AI Agent。
 outline: deep
 ---
 

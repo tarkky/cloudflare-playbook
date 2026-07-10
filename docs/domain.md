@@ -1,5 +1,6 @@
 ---
 title: 域名购买、托管与转移
+description: 域名比价、TLD 选择、Cloudflare DNS 托管、备案与跨境转移的实务指南。
 outline: deep
 ---
 
