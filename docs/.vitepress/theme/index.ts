@@ -1,4 +1,4 @@
-import DefaultTheme from 'vitepress/theme';
+import DefaultTheme from 'vitepress/theme-without-fonts';
 import './style.css';
 
 // 复用默认主题，只覆盖排版和视觉细节。
