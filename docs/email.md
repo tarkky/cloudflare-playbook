@@ -1,7 +1,6 @@
 ---
 title: Cloudflare Email
 description: Cloudflare Email Sending、Email Routing 与 Email Workers 的选型、投递和 Agent 集成指南。
-outline: deep
 ---
 
 <script setup>
@@ -44,7 +43,7 @@ import { Mail, Send, Inbox, Shield, Gauge, AlertTriangle, Link, Brain, ListFilte
 - **不用让用户装任何客户端**——邮件地址全世界都有，Agent 不需要为每个渠道做 SDK。
 - **入站邮件直接触发 Worker**——等于一个自带协议解析的入口，地址模式还能做路由（`support@` 走客服、`agent+user123@` 走某个实例）。
 - **异步天然合适**——Agent 可以跑很久再回，可以调度后续，这点比实时聊天更适合 Agent 的节奏。
-- **收发在同一平台闭环**——Email Routing 收、Workers AI 处理、Email Sending 回，不跨服务不跨鉴权。
+- **收发在同一平台完成**——Email Routing 收、Workers AI 处理、Email Sending 回，共用 Workers 的绑定和权限模型。
 
 需要分清的是：这是官方在发布期主推的**用例方向**和一个参考实现（agentic-inbox），不是说 Email Service 只有 Agent 这一种用法。下面既讲邮件服务本身的能力与边界，也讲它和 Agent 结合这个方向怎么落地。
 
@@ -63,7 +62,7 @@ Cloudflare Email Service 把"发信"和"收信"合并到 Dashboard 同一个入�
 
 一个常被忽略的免费点：**发送给你已验证的目标地址（verified destination addresses）在所有计划上都免费**，包括 Free。只有"发送给任意外部地址"才需要 Workers Paid。这意味着本地开发、自测、给团队成员发信这条链路零成本。
 
-和 Cloudflare 其它产品的关系一句话：**Email Sending 是 Workers 的一种 binding，Email Workers 是 Email Routing 的处理程序**——两件事都长在 Workers 体系里，能直接调 R2、Queues、Workers AI、D1、Durable Objects，不需要跨服务鉴权。这是"邮件 + AI 全链路闭环"能成立的底层原因。
+和 Cloudflare 其他产品的关系很直接：**Email Sending 是 Workers binding，Email Workers 是 Email Routing 的处理程序**。两者都在 Workers 体系内运行，可以直接调用 R2、Queues、Workers AI、D1 和 Durable Objects，不需要跨服务鉴权。
 
 ---
 
@@ -201,7 +200,7 @@ Cloudflare 自动处理：
 | `marketing.yourdomain.com` | 营销 / 推广 |
 | `yourdomain.com` | 重要账户通信 |
 
-Agent 自动发的邮件本质上也是事务邮件，归到 `notifications` 子域。营销邮件投诉率天然偏高，隔离出去才不会把 Agent 的订单确认 / 工单回复也拖进垃圾箱。
+Agent 自动发送的通知也属于事务邮件，归到 `notifications` 子域。营销邮件投诉率天然偏高，隔离出去才不会把 Agent 的订单确认 / 工单回复也拖进垃圾箱。
 
 ### 新域名 warmup
 
@@ -365,13 +364,13 @@ Dashboard 里 Email Service 提供的观测面，排查"用户说没收到邮件
 
 - **能力**：收发邮件 + Web 界面管理 + 内置 AI Agent。收信自动生成回复草稿（需人工确认才发），侧栏 Agent 面板带 9 个邮件工具（读、搜、起草、发送）。
 - **架构**：Hono Worker 做 API+SSR；每个邮箱一个 Durable Object + SQLite 隔离；附件存 R2；AI Agent 是一个 `AIChatAgent` Durable Object 接 Workers AI。
-- **AI 闭环**：Email Routing 收信 → Mailbox DO 存上下文 → EmailAgent 读邮件生成草稿 → 人工确认 → send_email binding 发出。完整示范了"邮件即工单 + AI 处理 + 人工兜底"。
+- **AI 处理链**：Email Routing 收信 → Mailbox DO 存上下文 → EmailAgent 读邮件生成草稿 → 人工确认 → send_email binding 发出。完整示范了“邮件即工单 + AI 处理 + 人工确认”。
 - **MCP 暴露**：自带 `/mcp` 端点，外部 AI 工具（Claude Code、Cursor）能通过 MCP 操作邮箱——等于把部署的邮箱变成整个 AI 工具链的共享邮件后端。
 - **部署**：README 有 **Deploy to Cloudflare 按钮**，自动配 R2 / DO / Workers AI；手动 `npm run deploy`。部署后要配 Cloudflare Access（生产鉴权）、Email Routing catch-all 规则、Email Service binding。
 - **注意**：无 per-mailbox 授权，Access 策略是唯一信任边界（见坑第 8 条）。Apache 2.0 协议。
 - **仓库**：[cloudflare/agentic-inbox](https://github.com/cloudflare/agentic-inbox)
 
-这个项目是"邮件 + Agent 全链路"的完整样本——部署一套 Agentic Inbox 比读文档更直观地展示收信 → AI 草稿 → 人工确认 → 发信的闭环。
+这个项目完整展示了收信 → AI 草稿 → 人工确认 → 发信。部署一套 Agentic Inbox，比只读 API 文档更容易看懂各组件如何配合。
 
 ### Cloudflare 官方 Email Skill
 
@@ -399,7 +398,7 @@ Email 不是孤立产品——它是 Agents SDK 工具层的一部分。[Cloudfl
 4. **接收端用子地址路由多实例。** `agent+user123@yourdomain.com` 路由到对应用户的 Agent 实例，邮件层解决分发。
 5. **需要兼容旧系统再加 SMTP。** 老客户端填 465 + `api_token` + Token。
 
-这条路径下来，收发 + 智能处理全在 Cloudflare 内闭环，无需第三方邮件服务，密钥管理也只在 Cloudflare 这一层。
+按这条路径部署后，收发和智能处理都在 Cloudflare 内完成，无需第三方邮件服务，密钥也只在 Cloudflare 这一层管理。
 
 ---
 

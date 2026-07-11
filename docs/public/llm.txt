@@ -7,13 +7,13 @@
 
 ## 1. AI 编程工作流
 
-先给 AI 配好 Cloudflare 的"说明书"和"工具箱"，配完之后你想怎么问就怎么问——Cloudflare 有什么、边界在哪、该怎么写，AI 自己会查。这本手册的剩下部分是给你查漏补缺的，不用从头读到尾。
+先给编程代理接上 Cloudflare 的官方 Skills、MCP 和运行日志。Skills 提供开发约束，MCP 查询文档和账号状态，日志负责证明线上到底发生了什么。这本手册用来补产品地图和工程取舍，不用从头读到尾。
 
 如果想让它快速了解全貌，把 llm.txt 喂给它（见下方"把这本手册喂给 AI"）。
 
 ### 安装 Skill 和 MCP
 
-Cloudflare 官方维护了一套 Agent Skills（[cloudflare/skills](https://github.com/cloudflare/skills)），支持 Claude Code、Cursor、OpenCode、OpenAI Codex、Pi 等主流 agent。装上之后 AI 就知道 Cloudflare 怎么开发，不会把你当成在写普通 Node.js 项目。
+Cloudflare 官方维护了一套 Agent Skills（[cloudflare/skills](https://github.com/cloudflare/skills)），支持 Claude Code、Cursor、OpenCode、OpenAI Codex、Pi 等主流 agent。安装后，Agent 会按任务加载 Workers 运行时、绑定、部署和安全约束，减少照搬普通 Node.js 写法的错误。
 
 **Claude Code：**
 
@@ -73,7 +73,7 @@ Clone [cloudflare/skills](https://github.com/cloudflare/skills) 仓库，把 ski
 - `/cloudflare:build-agent` — 用 Agents SDK 构建 AI agent
 - `/cloudflare:build-mcp` — 构建 MCP server
 
-**Wrangler（命令行工具）** — Skill 和 MCP 都是帮助 AI 理解，真正跑起来和部署靠 Wrangler：
+**Wrangler（命令行工具）** — Skill 和 MCP 提供上下文，开发和部署仍由 Wrangler 执行：
 
 ```bash
 npm i -D wrangler@latest
@@ -90,7 +90,7 @@ npx wrangler tail     # 实时日志
 阅读 https://chendahuang.com/playbook/cloudflare/llm.txt 了解 Cloudflare 平台全貌，然后帮我……
 ```
 
-这个文件是本手册的纯文本版，涵盖功能模块、架构模式、计费、避坑指南。AI 读完就能结合 Skill 和 MCP 帮你干活。
+这个文件是本手册的纯文本索引，涵盖功能模块、架构模式、计费和避坑指南，适合和官方 Skill、MCP 一起提供给 Agent。
 
 ### 新项目从零开始
 
@@ -202,7 +202,7 @@ flowchart LR
 
 ### AI 编程 Cloudflare 常见翻车点
 
-AI 生成 Cloudflare 代码时，最容易犯的错误不是语法问题，而是不了解 Cloudflare 运行时的特殊约束。以下是高频翻车点和对应的正确做法：
+AI 生成的 Cloudflare 代码，常见问题来自 Workers 与普通 Node.js 运行时的差异。下面按高频错误列出对应做法：
 
 **1. 用 Node.js 思维写 Worker**
 
@@ -295,7 +295,7 @@ AI 生成 Vite、React、Vue、Svelte、静态文档站或带 API 的前端项�
 #### Pages
 面向前端项目的部署平台，主打 Git 集成、预览部署和静态站发布。
 
-连上 GitHub/GitLab 后，push 就能构建和发布，适合官网、博客、文档站、活动页、原型页面。Pages Functions 本质上也是 Workers 能力；如果你要的是“前端 + API + 多个绑定”一体化项目，现在更推荐看 Workers Static Assets。已有 Pages 项目、依赖预览部署和 Git 工作流时，继续用 Pages 也没问题。
+连上 GitHub/GitLab 后，push 就能构建和发布，适合官网、博客、文档站、活动页、原型页面。Pages Functions 也运行在 Workers 能力上；如果你要的是“前端 + API + 多个绑定”一体化项目，现在更推荐看 Workers Static Assets。已有 Pages 项目、依赖预览部署和 Git 工作流时，继续用 Pages 也没问题。
 
 #### Durable Objects
 有状态对象，适合需要强一致协调、会话状态和 WebSocket 的场景。
@@ -320,7 +320,7 @@ AI 生成的业务经常不是一次请求能做完：先调 API，再写库，�
 #### Cron Triggers
 按 cron 表达式定时触发 Worker 的计划任务。
 
-每小时同步一次数据、每天清理一次 D1、定时刷新缓存、周期性检查第三方 API，都可以用 Cron Triggers。它只负责“到点触发一次 Worker”；如果触发后要跑很多步骤、等待人工审批、失败后恢复上下文，就把真正流程放到 Workflows。
+每小时同步一次数据、每天清理一次 D1、定时刷新缓存、周期性检查第三方 API，都可以用 Cron Triggers。它只负责“到点触发一次 Worker”；如果触发后要跑很多步骤、等待人工审批、失败后恢复上下文，就把完整流程放到 Workflows。
 
 ### 数据存储
 
@@ -400,7 +400,7 @@ Cloudflare 的 serverless AI 推理平台。
 #### AI Gateway
 AI API 的统一网关，负责观测、缓存、限流和成本控制。
 
-同时用 OpenAI、Anthropic、Workers AI、Groq、Mistral 这类 provider 时，不要让代码里散落一堆 API 调用，先接 AI Gateway。它能记录请求、看延迟和错误、做缓存、限流、重试、fallback，也能帮你控制花费。做 AI 应用时，这一层非常值钱：它不是模型本身，而是模型调用的控制台和保险丝。
+同时用 OpenAI、Anthropic、Workers AI、Groq、Mistral 这类 provider 时，不要让代码里散落一堆 API 调用，先接 AI Gateway。它统一记录请求、延迟和错误，并处理缓存、限流、重试、fallback 与成本控制，是模型调用的控制台和保险丝。
 
 #### Vectorize
 向量数据库，见数据存储。
@@ -441,7 +441,7 @@ flowchart TD
 #### Realtime
 实时音视频和低延迟通信能力。
 
-这一组对应 Dashboard 里的 Realtime，包括 RealtimeKit、TURN 服务器、无服务器 SFU、MoQ 中继等能力。做多人会议、语音房、直播连麦、实时互动时会碰到它。普通 WebSocket 协作先看 Workers + Durable Objects；真正涉及音视频链路、NAT 穿透、SFU 转发和低延迟媒体传输时，再进入 Realtime。
+这一组对应 Dashboard 里的 Realtime，包括 RealtimeKit、TURN 服务器、无服务器 SFU、MoQ 中继等能力。做多人会议、语音房、直播连麦、实时互动时会碰到它。普通 WebSocket 协作先看 Workers + Durable Objects；涉及音视频链路、NAT 穿透、SFU 转发和低延迟媒体传输时，再进入 Realtime。
 
 #### Browser Rendering
 在 Workers 里调用无头浏览器进行渲染、截图和自动化。
@@ -464,7 +464,7 @@ flowchart TD
 #### Turnstile
 Cloudflare 的验证码替代方案，用来判断请求是不是来自真实用户。
 
-登录、注册、评论、表单、试用申请都能接 Turnstile。它的思路不是逼用户选图，而是尽量在后台判断风险，必要时才让用户交互。接入时前端放 widget，后端校验 token；只在前端放组件但后端不验，等于没接。
+登录、注册、评论、表单、试用申请都能接 Turnstile。它尽量在后台判断风险，必要时才让用户交互。接入时前端放 widget，后端校验 token；只在前端放组件但后端不验，等于没接。
 
 #### Access
 Zero Trust 里的应用访问控制，给内部工具和后台加身份验证。
@@ -484,7 +484,7 @@ WAF 可以用托管规则、自定义规则、速率限制等方式处理 SQL �
 #### DDoS 防护
 Cloudflare 网络层和应用层的 DDoS 防护。
 
-Cloudflare 会在边缘网络自动吸收和缓解大量攻击流量，HTTP 层也有对应的检测和规则。大多数小项目不需要专门配置它；真正被打时，重点是确认域名已代理到 Cloudflare、源站 IP 没暴露、缓存和 WAF 策略没有把正常用户误伤。
+Cloudflare 会在边缘网络自动吸收和缓解大量攻击流量，HTTP 层也有对应的检测和规则。大多数小项目不需要专门配置它；遭遇攻击时，重点确认域名已代理到 Cloudflare、源站 IP 没暴露、缓存和 WAF 策略没有误伤正常用户。
 
 #### API Shield
 面向 API 的安全能力集合，包括 schema 校验、mTLS、发现和滥用检测。
@@ -762,7 +762,7 @@ Workers 里的自定义指标和事件分析引擎。
 | R2 存 15 GB 图片 | 15 GB 存储 | **$5.00 + $0.075 R2**（R2 和 $5 套餐分开算，超出 10 GB 按 $0.015/GB） |
 | R2 存 50 GB + 200 万 A 类操作 | 50 GB / 200 万 A 类 | **$5.00 + $0.60 R2**（存储 $0.60 + A 类 $0.45 + B 类约 $0） |
 
-> 静态资源请求免费是 Workers Static Assets 的关键优势：只要把前端放在 Static Assets 上，只有真正调用 Worker 的动态请求才计费。
+> 静态资源请求免费是 Workers Static Assets 的关键优势：前端放在 Static Assets 上后，只有进入 Worker 的动态请求才计费。
 
 ### 什么时候升级
 
@@ -817,7 +817,7 @@ Workers 里的自定义指标和事件分析引擎。
 
 ## 4. 开源项目
 
-想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批真正使用 Cloudflare 能力、文档相对完整、仍有维护价值的开源项目。标「推荐」的是同类里优先看的那个。
+想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批实际使用 Cloudflare 能力、文档相对完整、仍有维护价值的开源项目。标「推荐」的是同类里优先看的那个。
 
 开源项目更适合拿来学架构和缩短起步时间，不等于可以不审代码直接上线。先看最近提交、部署文档、数据迁移和备份路径，再决定是直接用、二次开发，还是只吸收其中一个模块。
 
@@ -1202,7 +1202,7 @@ AI 看到 5xx 容易直接去改 Worker 代码，但 `522` 是源站问题、`10
 
    两种 DO ID 适合不同场景。`getByName(str)` 用字符串生成确定性 ID——同样的输入永远得到同样的 ID，适合"某房间 / 某用户"这种路由：你不需要存映射，算一下就找到。`newUniqueId()` 生成随机 ID，但你**必须自己存映射**（比如存 D1），否则再也找不到这个 DO。
 
-   另外一个容易误解的点：创建 stub（`env.NAMESPACE.get(id)`）不会实例化或唤醒 DO——它只是拿到一个引用。只有调用 stub 上的方法才会真正激活 DO。
+   另外一个容易误解的点：创建 stub（`env.NAMESPACE.get(id)`）不会实例化或唤醒 DO——它只是拿到一个引用。只有调用 stub 上的方法才会激活 DO。
 
    来源：[DO limits](https://developers.cloudflare.com/durable-objects/platform/limits/)
 
@@ -1528,7 +1528,7 @@ Cloudflare China Network 文档里专门有一页 [ICP](https://developers.cloud
 - **给关键资源设清楚的缓存策略**。Cache Rules 配好 TTL，HTML 短缓存、静态资源长缓存。
 - **用国内外多地监控看真实可用性，不只看自己电脑**。自己通不代表全国通。
 - **第三方 JS 做好降级**。Turnstile、Web Analytics 这种加载失败时不要把页面拖死。
-- **中国大陆是核心用户，准备国内镜像或符合要求的国内部署方案**。不要硬押一条海外线路。
+- **中国大陆是主要用户，准备国内镜像或符合要求的国内部署方案**。不要硬押一条海外线路。
 
 ### 常见症状 → 大概原因
 
@@ -1575,7 +1575,7 @@ Cloudflare China Network 文档里专门有一页 [ICP](https://developers.cloud
 - 第三方 JS（Turnstile、Analytics 等）做好降级处理，国内加载失败是常态而非例外。
 - 上线前使用多地拨测工具验证可用性，本地测试通过不代表全国可用。
 
-### 合规边界一句话
+### 合规边界
 
 ICP 备案、内容合规、数据出境是法律问题，不是 Cloudflare 能替你解决的。技术方案只回答“能不能访问”，不回答“该不该这么部署”。
 
@@ -1583,9 +1583,9 @@ ICP 备案、内容合规、数据出境是法律问题，不是 Cloudflare 能�
 
 ## 7. Cloudflare Agents
 
-Cloudflare Agents 是让 AI Agent 长期在线的运行平台——有公网入口、有持久状态、能定时执行、能调用工具，空闲休眠、按需唤醒。在 AI 编程时代，你用 Claude Code / Codex 在本地把 Agent 写出来，部署到 Cloudflare 长期运行；而且部署上去的 Agent 本身可以是"云端版 Claude Code"（`@cloudflare/think`）。它和 Hermes（成品助理）、Pi（本地可改造工具箱）不是替代关系，而是分工。
+Cloudflare Agents 给 AI Agent 提供公网入口、持久状态、定时执行和工具调用，空闲时休眠，有请求时唤醒。可以在本地用 Claude Code 或 Codex 开发，再部署到 Cloudflare 长期运行；`@cloudflare/think` 还能把文件、技能和代码执行能力带到云端。Hermes、Pi 与它解决的问题不同，按场景分工即可。
 
-一句话记住：**把 Agent 从本地 demo，变成能长期在线服务用户的产品**——适合做个人助理、文档助手、AI 客服、编程 Agent、GitHub Repo 管家，独立开发者很值得看。
+**适合场景：**把本地 demo 部署成长期在线的个人助理、文档助手、AI 客服、编程 Agent 或 GitHub 仓库管家。
 
 详细内容见 → [Cloudflare Agents](/agents)
 
@@ -1595,7 +1595,7 @@ Cloudflare Agents 是让 AI Agent 长期在线的运行平台——有公网入�
 
 Cloudflare 只管 DNS 托管，不管买卖域名。域名在哪买、买什么后缀、买完怎么把 NS 指到 Cloudflare、要不要备案、要不要跨境转移——这一段单独拎成一篇子页讲清楚：比价的坑（**首年价 ≠ 续费价**）、各 TLD 的实务定位、改 NS 步骤、国内 vs 国外的差异、域名转移流程，以及 Cloudflare Registrar 不支持的后缀怎么兜底。
 
-一句话记住：**注册商去便宜的地方买（比续费价）、DNS 永远托管到 Cloudflare**，这两个动作可以拆开做。
+**操作建议：**注册商按续费价选择，DNS 独立托管到 Cloudflare；买域名和管 DNS 是两件事。
 
 详细内容见 → [域名购买、托管与转移](/domain)
 
@@ -1603,9 +1603,9 @@ Cloudflare 只管 DNS 托管，不管买卖域名。域名在哪买、买什么�
 
 ## 9. 邮件
 
-Cloudflare Email Service 把收发合在一个入口管——出站 Email Sending 支持 Workers Binding / REST API / SMTP 三种方式（Public Beta，需 Workers Paid），入站 Email Routing + Email Workers 已 GA、Free 可用。底层自动 DKIM/SPF/DMARC、托管 IP 声誉、退信指数退避、硬退信自动抑制，发给你已验证的目标地址在所有计划上免费。Email Workers 能直接调 R2、Queues、Workers AI，做"邮件即工单"或 AI 自动回复这条链路全在 Cloudflare 内闭环。
+Cloudflare Email Service 统一管理收发：出站 Email Sending 支持 Workers Binding、REST API 和 SMTP（Public Beta，需 Workers Paid）；入站 Email Routing 与 Email Workers 已 GA，Free 可用。平台负责 DKIM/SPF/DMARC、IP 声誉、退信重试和硬退信抑制。Email Workers 能直接调用 R2、Queues 和 Workers AI，适合做“邮件即工单”和 AI 自动回复。
 
-一句话记住：**新项目用 Workers Binding，旧系统用 SMTP（仅 465 Implicit TLS），接收端用 Email Workers + AI 做智能路由**，无需第三方邮件服务。
+**选型建议：**新项目用 Workers Binding，旧系统按需接 SMTP（仅 465 Implicit TLS），接收端用 Email Workers 处理路由和自动化。
 
 详细内容见 → [Cloudflare Email](/email)
 
@@ -1644,7 +1644,7 @@ Cloudflare Agents 是 Cloudflare 的 AI Agent 运行平台。底层是 [Durable 
 
 部署一次就由 Cloudflare 全球网络承载，官方说能扩到数千万个实例。
 
-技术栈是 [Agents SDK](https://github.com/cloudflare/agents)，底层跑在 Durable Objects 上。SDK 现在已经长成一个完整生态（见下文 [Think：云端版 Claude Code](#think-云端版-claude-code) 和 [参考项目与生态](#参考项目与生态)），不只是早期的裸 Agent 类。
+技术栈是 [Agents SDK](https://github.com/cloudflare/agents)，底层跑在 Durable Objects 上。除基础 Agent 类外，SDK 现在还覆盖 Think、聊天、工具、调度和多种通信入口（见下文 [Think：云端版 Claude Code](#think-云端版-claude-code) 和 [参考项目与生态](#参考项目与生态)）。
 
 官网把一个 Agent 的结构归纳成四层，理解这四层就知道它长什么样：
 
@@ -1663,7 +1663,7 @@ flowchart TD
 
 ## 与同类工具的定位差异
 
-几样东西名字都带 Agent，但定位完全不同，**不是替代关系，是分工关系**。
+这些产品都带 Agent 名称，但解决的问题不同。下面按运行位置、状态和交付方式区分。
 
 | 工具 | 在哪跑 | 有公网入口 | 有长期状态/记忆 | 能定时 | 主线定位 |
 | --- | --- | --- | --- | --- | --- |
@@ -1689,7 +1689,7 @@ flowchart TD
 
 > Think 目前标记为 Experimental，API 稳定但毕业前可能调整。下面的判断建立在这个前提上：选型时把它当"值得押注但要做好 API 可能变"的东西，详见 [Think 文档](https://developers.cloudflare.com/agents/api-reference/think/) 和 [think 包 README](https://github.com/cloudflare/agents/tree/main/packages/think)。
 
-`@cloudflare/think` 是 Agents SDK 里的一个高层基类。它本质是"云端版 Claude Code / Codex"——把本地编程 Agent 的核心能力搬到了云端，再加长期在线、公网入口、定时任务、部署恢复。
+`@cloudflare/think` 是 Agents SDK 里的高层基类，可以看作带持久状态和公网入口的云端编程 Agent：文件读写、技能和代码执行都在云端运行，并支持定时任务与部署恢复。
 
 ### 与 Claude Code / Codex 的能力对照
 
@@ -1732,7 +1732,7 @@ Claude Code / Codex 是你本地的工具，关了就停；Think 是部署在 Cl
 - **Sessions**：树状历史，支持分支、压缩、全文检索，而不只是一个消息列表。对话一长，线性列表既占 token 又没法检索，压缩和分支是省 token 的关键。
 - **Human-in-the-loop**：一个 turn 能为审批或浏览器端工具暂停，稍后恢复，不会变成卡死的请求。有写操作的 Agent 不加这个，审批就只能靠人盯，请求会一直挂着超时。
 - **Messengers**：接 Telegram（Slack/Discord 在路上），每个 Chat SDK 线程跑在自己的 Think 子 Agent 里，避免上下文串线。一个 Agent 服务多个人时，不隔离就会把 A 的对话漏给 B。
-- **Workspace + Skills + Code execution**：虚拟文件系统、Agent Skills 目录、`codemode` 沙箱执行——云端 Claude Code 的那套能力。下面单独讲 `codemode` 和 `extensions`，因为这是 Think 区别于"调一次 LLM"的本质。
+- **Workspace + Skills + Code execution**：虚拟文件系统、Agent Skills 目录、`codemode` 沙箱执行——云端 Claude Code 的那套能力。下面单独讲 `codemode` 和 `extensions`，这是 Think 与单次模型调用最明显的差别。
 
 ### codemode 和 extensions：Agent 自己给自己写代码
 
@@ -1804,7 +1804,7 @@ think-starters 之外，还有三类典型场景有对应的官方实现：
 
 ## 一个人，以前做不到现在能做到
 
-这一节是给独立开发者看的。Cloudflare Agents 真正的价值不在"又一个跑 LLM 的地方"，而在"一个人现在能做到以前只有团队才做的事"。
+这一节面向独立开发者。Cloudflare Agents 把状态、调度、工具和部署放进同一套运行环境，让一个人也能维护长期在线的 Agent 产品。
 
 **以前做一个 24 小时在线的 Agent 要什么：** 租一台 VPS 或小服务器、写守护进程保证它不挂、自己搭 cron 跑定时任务、自己用文件或数据库存对话状态、自己接 webhook 处理入口、自己处理重启后状态恢复、自己管 SSL 和域名、月底盯着服务器账单。这些活加起来，往往比写 Agent 本身还多。一个人做兼职项目，光是"让它稳定在线"这一摊就能耗掉所有精力。
 
@@ -1818,7 +1818,7 @@ think-starters 之外，还有三类典型场景有对应的官方实现：
 
 ## 本地 ↔ 云端：Agent 时代的协作工作流
 
-Agent 时代出现了一个新的协作结构：**人在本地写代码，Agent 在云端长期跑**。这不是"部署完就走"的传统模式，而是两条线一直配合。
+常见协作方式是：**人在本地写代码，Agent 在云端长期跑**。本地持续修改和发布，云端负责状态、任务和用户请求，两条线长期配合。
 
 **第一条线：本地 Claude Code ↔ 云端 Think 的开发循环。**
 
@@ -1841,13 +1841,13 @@ Agent 时代出现了一个新的协作结构：**人在本地写代码，Agent 
 - **人在本地**：写 Agent 的骨架、定 system prompt、审 Agent 自己写的代码、决定要不要让某个 extension 上线。
 - **Agent 在云端**：长期在线服务用户、定时干活、遇到能力空白自己补、出问题被本地重新部署修复。
 
-两条线合起来，人的角色偏向"定方向、审结果"，写代码的不只是你——Agent 在云端也会自己写、自己扩。这和"本地跑一次 LLM 拿个回答"已经不是一回事。
+两条线合起来，人的角色偏向“定方向、审结果”；Agent 在云端执行任务、写临时代码并扩展工具。它承担的是持续运行的产品任务，而非一次模型回答。
 
 ---
 
 ## 从自用到收费
 
-独立开发者的真实路径不是"做完一个 Agent 就结束"，而是从自用慢慢走到能收费。这条路径上每一步该加什么：
+独立开发者通常会从自用开始，再逐步开放给朋友和付费用户。每个阶段需要增加的能力不同：
 
 **第一步：自用。** 不加登录、不接多渠道，纯网页聊天或 Telegram 单人用。目标是自己用得顺手、验证这个工作流真的有价值。这一步用 Free 额度大概率够，见 [成本与计费](#成本与计费)。
 
@@ -1949,7 +1949,7 @@ AI 编程工具写得好不好，很看它能不能读到准确的官方资料�
 
 [Agents examples](https://developers.cloudflare.com/agents/examples/chat-agent/) 文档区有 30+ 完整示例，挑最像真实产品的几个重点看：
 
-**5. [Agentic Inbox](https://github.com/cloudflare/agentic-inbox)（最像真实产品的官方案例）** —— Cloudflare 官方开源的自托管邮件客户端，整个跑在 Workers 上。收信走 Email Routing，每个邮箱一个独立 Durable Object + SQLite，附件放 R2，AI Agent 有 9 个邮件工具。想看"Cloudflare Agents 能不能做真实产品而不只是聊天 demo"，看这个。
+**5. [Agentic Inbox](https://github.com/cloudflare/agentic-inbox)（完整产品案例）** —— Cloudflare 官方开源的自托管邮件客户端，整个跑在 Workers 上。收信走 Email Routing，每个邮箱一个独立 Durable Object + SQLite，附件放 R2，AI Agent 有 9 个邮件工具。它适合用来观察 Cloudflare Agents 如何承载聊天之外的真实产品流程。
 
 **6. [Email Agent](https://developers.cloudflare.com/agents/examples/email-agent/)（邮件工作流基础）** —— 官方文档讲 Agents 如何收发邮件、路由 inbound、处理 follow-up。想做邮件助理，先看这个打基础，再看 Agentic Inbox 看完整产品。
 
@@ -2117,7 +2117,7 @@ Cloudflare Agents 没有单独的计费项——**按它底层用到的资源算
 注册商定价一般长这样：
 
 - **首年促销价（first-year promo）**：新注册第一年很便宜，甚至 1 美元、9 块人民币。常见于 .com / .net / .xyz / .icu / .top。看价格别只看这一栏。
-- **续费价（renewal price）**：第二年起按正常价续费，通常是首年价的 3–10 倍。这是你真正长期成本。
+- **续费价（renewal price）**：第二年起按正常价续费，通常是首年价的 3–10 倍。这才是长期成本。
 - **转入价（transfer-in price）**：把域名从别家转过来时的价格，通常等于"1 年续费价 + 转移操作"。转移成功后注册期限自动延长 1 年，所以这一步等于"提前续费"。
 
 还要注意三类隐性成本：
@@ -2387,7 +2387,7 @@ DNS 托管 ≠ 域名买卖。两个动作可以拆开：**注册商买便宜的
 - **不用让用户装任何客户端**——邮件地址全世界都有，Agent 不需要为每个渠道做 SDK。
 - **入站邮件直接触发 Worker**——等于一个自带协议解析的入口，地址模式还能做路由（`support@` 走客服、`agent+user123@` 走某个实例）。
 - **异步天然合适**——Agent 可以跑很久再回，可以调度后续，这点比实时聊天更适合 Agent 的节奏。
-- **收发在同一平台闭环**——Email Routing 收、Workers AI 处理、Email Sending 回，不跨服务不跨鉴权。
+- **收发在同一平台完成**——Email Routing 收、Workers AI 处理、Email Sending 回，共用 Workers 的绑定和权限模型。
 
 需要分清的是：这是官方在发布期主推的**用例方向**和一个参考实现（agentic-inbox），不是说 Email Service 只有 Agent 这一种用法。下面既讲邮件服务本身的能力与边界，也讲它和 Agent 结合这个方向怎么落地。
 
@@ -2406,7 +2406,7 @@ Cloudflare Email Service 把"发信"和"收信"合并到 Dashboard 同一个入�
 
 一个常被忽略的免费点：**发送给你已验证的目标地址（verified destination addresses）在所有计划上都免费**，包括 Free。只有"发送给任意外部地址"才需要 Workers Paid。这意味着本地开发、自测、给团队成员发信这条链路零成本。
 
-和 Cloudflare 其它产品的关系一句话：**Email Sending 是 Workers 的一种 binding，Email Workers 是 Email Routing 的处理程序**——两件事都长在 Workers 体系里，能直接调 R2、Queues、Workers AI、D1、Durable Objects，不需要跨服务鉴权。这是"邮件 + AI 全链路闭环"能成立的底层原因。
+和 Cloudflare 其他产品的关系很直接：**Email Sending 是 Workers binding，Email Workers 是 Email Routing 的处理程序**。两者都在 Workers 体系内运行，可以直接调用 R2、Queues、Workers AI、D1 和 Durable Objects，不需要跨服务鉴权。
 
 ---
 
@@ -2544,7 +2544,7 @@ Cloudflare 自动处理：
 | `marketing.yourdomain.com` | 营销 / 推广 |
 | `yourdomain.com` | 重要账户通信 |
 
-Agent 自动发的邮件本质上也是事务邮件，归到 `notifications` 子域。营销邮件投诉率天然偏高，隔离出去才不会把 Agent 的订单确认 / 工单回复也拖进垃圾箱。
+Agent 自动发送的通知也属于事务邮件，归到 `notifications` 子域。营销邮件投诉率天然偏高，隔离出去才不会把 Agent 的订单确认 / 工单回复也拖进垃圾箱。
 
 ### 新域名 warmup
 
@@ -2708,13 +2708,13 @@ Dashboard 里 Email Service 提供的观测面，排查"用户说没收到邮件
 
 - **能力**：收发邮件 + Web 界面管理 + 内置 AI Agent。收信自动生成回复草稿（需人工确认才发），侧栏 Agent 面板带 9 个邮件工具（读、搜、起草、发送）。
 - **架构**：Hono Worker 做 API+SSR；每个邮箱一个 Durable Object + SQLite 隔离；附件存 R2；AI Agent 是一个 `AIChatAgent` Durable Object 接 Workers AI。
-- **AI 闭环**：Email Routing 收信 → Mailbox DO 存上下文 → EmailAgent 读邮件生成草稿 → 人工确认 → send_email binding 发出。完整示范了"邮件即工单 + AI 处理 + 人工兜底"。
+- **AI 处理链**：Email Routing 收信 → Mailbox DO 存上下文 → EmailAgent 读邮件生成草稿 → 人工确认 → send_email binding 发出。完整示范了“邮件即工单 + AI 处理 + 人工确认”。
 - **MCP 暴露**：自带 `/mcp` 端点，外部 AI 工具（Claude Code、Cursor）能通过 MCP 操作邮箱——等于把部署的邮箱变成整个 AI 工具链的共享邮件后端。
 - **部署**：README 有 **Deploy to Cloudflare 按钮**，自动配 R2 / DO / Workers AI；手动 `npm run deploy`。部署后要配 Cloudflare Access（生产鉴权）、Email Routing catch-all 规则、Email Service binding。
 - **注意**：无 per-mailbox 授权，Access 策略是唯一信任边界（见坑第 8 条）。Apache 2.0 协议。
 - **仓库**：[cloudflare/agentic-inbox](https://github.com/cloudflare/agentic-inbox)
 
-这个项目是"邮件 + Agent 全链路"的完整样本——部署一套 Agentic Inbox 比读文档更直观地展示收信 → AI 草稿 → 人工确认 → 发信的闭环。
+这个项目完整展示了收信 → AI 草稿 → 人工确认 → 发信。部署一套 Agentic Inbox，比只读 API 文档更容易看懂各组件如何配合。
 
 ### Cloudflare 官方 Email Skill
 
@@ -2742,7 +2742,7 @@ Email 不是孤立产品——它是 Agents SDK 工具层的一部分。[Cloudfl
 4. **接收端用子地址路由多实例。** `agent+user123@yourdomain.com` 路由到对应用户的 Agent 实例，邮件层解决分发。
 5. **需要兼容旧系统再加 SMTP。** 老客户端填 465 + `api_token` + Token。
 
-这条路径下来，收发 + 智能处理全在 Cloudflare 内闭环，无需第三方邮件服务，密钥管理也只在 Cloudflare 这一层。
+按这条路径部署后，收发和智能处理都在 Cloudflare 内完成，无需第三方邮件服务，密钥也只在 Cloudflare 这一层管理。
 
 ---
 

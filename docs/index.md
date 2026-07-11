@@ -1,7 +1,6 @@
 ---
 title: Cloudflare 实战手册
 description: Cloudflare 功能全景、AI 编程工作流、计费额度、架构模式与生产避坑指南。
-outline: deep
 ---
 
 <script setup>
@@ -12,17 +11,17 @@ import { Cloud, Bot, Wallet, Zap, Package, AlertTriangle, Globe, Search, Clipboa
 <section class="onepage-hero">
   <p class="onepage-kicker">Cloudflare Playbook</p>
   <h1 class="onepage-title">Cloudflare 实战手册</h1>
-  <p class="onepage-subtitle">AI 编程时代的 Cloudflare 实战手册——用 AI 写代码，用 Cloudflare 部署到全球。涵盖功能模块、AI 编程工作流、计费对比、架构模式与避坑指南。</p>
+  <p class="onepage-subtitle">用 AI 写代码，用 Cloudflare 部署。这里集中讲平台能力、开发工作流、成本、架构取舍和生产排障；遇到问题按目录查，不必顺序读完。</p>
 </section>
 
 <div class="quick-grid">
-  <a href="#ai-编程工作流"><div class="card-icon"><Bot /></div><div class="card-body"><strong>AI 编程工作流</strong><span>先把 AI 配好，剩下的交给 AI</span></div></a>
-  <a href="#cloudflare-功能模块"><div class="card-icon"><Cloud /></div><div class="card-body"><strong>功能模块</strong><span>查漏补缺：每个模块是什么、能干嘛、怎么选</span></div></a>
+  <a href="#ai-编程工作流"><div class="card-icon"><Bot /></div><div class="card-body"><strong>AI 编程工作流</strong><span>接上官方 Skills、MCP 和运行日志</span></div></a>
+  <a href="#cloudflare-功能模块"><div class="card-icon"><Cloud /></div><div class="card-body"><strong>功能模块</strong><span>按场景选产品，顺手查清边界</span></div></a>
   <a href="#_3-计费与额度"><div class="card-icon"><Wallet /></div><div class="card-body"><strong>计费与额度</strong><span>Free vs Paid 对比，超出怎么算</span></div></a>
   <a href="#_4-开源项目"><div class="card-icon"><Package /></div><div class="card-body"><strong>开源项目</strong><span>按用途整理可参考的项目</span></div></a>
   <a href="#_5-避坑指南"><div class="card-icon"><AlertTriangle /></div><div class="card-body"><strong>避坑指南</strong><span>官方文档提炼的工程约束与对策</span></div></a>
   <a href="#_6-国内访问"><div class="card-icon"><Globe /></div><div class="card-body"><strong>国内访问</strong><span>国内用户访问 CF 的注意事项</span></div></a>
-  <a :href="withBase('/agents')"><div class="card-icon"><Bot /></div><div class="card-body"><strong>Cloudflare Agents</strong><span>让 AI Agent 长期在线的运行平台——有入口、有状态、能定时、能上线</span></div></a>
+  <a :href="withBase('/agents')"><div class="card-icon"><Bot /></div><div class="card-body"><strong>Cloudflare Agents</strong><span>公网入口、持久状态、调度和工具调用</span></div></a>
   <a :href="withBase('/domain')"><div class="card-icon"><ShoppingCart /></div><div class="card-body"><strong>域名</strong><span>购买、比价、后缀与托管到 CF</span></div></a>
   <a :href="withBase('/email')"><div class="card-icon"><Mail /></div><div class="card-body"><strong>邮件</strong><span>收发都在 CF：Sending 三种方式 + Routing 接收 + Email Workers</span></div></a>
   <a href="#官方资源"><div class="card-icon"><Link /></div><div class="card-body"><strong>官方资源</strong><span>文档、模板和项目池</span></div></a>
@@ -30,13 +29,13 @@ import { Cloud, Bot, Wallet, Zap, Package, AlertTriangle, Globe, Search, Clipboa
 
 ## 1. AI 编程工作流 {#ai-编程工作流}
 
-先给 AI 配好 Cloudflare 的"说明书"和"工具箱"，配完之后你想怎么问就怎么问——Cloudflare 有什么、边界在哪、该怎么写，AI 自己会查。这本手册的剩下部分是给你查漏补缺的，不用从头读到尾。
+先给编程代理接上 Cloudflare 的官方 Skills、MCP 和运行日志。Skills 提供开发约束，MCP 查询文档和账号状态，日志负责证明线上到底发生了什么。这本手册用来补产品地图和工程取舍，不用从头读到尾。
 
 如果想让它快速了解全貌，把 llm.txt 喂给它（见下方"把这本手册喂给 AI"）。
 
 ### 安装 Skill 和 MCP
 
-Cloudflare 官方维护了一套 Agent Skills（[cloudflare/skills](https://github.com/cloudflare/skills)），支持 Claude Code、Cursor、OpenCode、OpenAI Codex、Pi 等主流 agent。装上之后 AI 就知道 Cloudflare 怎么开发，不会把你当成在写普通 Node.js 项目。
+Cloudflare 官方维护了一套 Agent Skills（[cloudflare/skills](https://github.com/cloudflare/skills)），支持 Claude Code、Cursor、OpenCode、OpenAI Codex、Pi 等主流 agent。安装后，Agent 会按任务加载 Workers 运行时、绑定、部署和安全约束，减少照搬普通 Node.js 写法的错误。
 
 **Claude Code：**
 
@@ -96,7 +95,7 @@ Clone [cloudflare/skills](https://github.com/cloudflare/skills) 仓库，把 ski
 - `/cloudflare:build-agent` — 用 Agents SDK 构建 AI agent
 - `/cloudflare:build-mcp` — 构建 MCP server
 
-**Wrangler（命令行工具）** — Skill 和 MCP 都是帮助 AI 理解，真正跑起来和部署靠 Wrangler：
+**Wrangler（命令行工具）** — Skill 和 MCP 提供上下文，开发和部署仍由 Wrangler 执行：
 
 ```bash
 npm i -D wrangler@latest
@@ -113,7 +112,7 @@ npx wrangler tail     # 实时日志
 阅读 https://chendahuang.com/playbook/cloudflare/llm.txt 了解 Cloudflare 平台全貌，然后帮我……
 ```
 
-这个文件是本手册的纯文本版，涵盖功能模块、架构模式、计费、避坑指南。AI 读完就能结合 Skill 和 MCP 帮你干活。
+这个文件是本手册的纯文本索引，涵盖功能模块、架构模式、计费和避坑指南，适合和官方 Skill、MCP 一起提供给 Agent。
 
 ### 新项目从零开始
 
@@ -225,7 +224,7 @@ flowchart LR
 
 ### AI 编程 Cloudflare 常见翻车点
 
-AI 生成 Cloudflare 代码时，最容易犯的错误不是语法问题，而是不了解 Cloudflare 运行时的特殊约束。以下是高频翻车点和对应的正确做法：
+AI 生成的 Cloudflare 代码，常见问题来自 Workers 与普通 Node.js 运行时的差异。下面按高频错误列出对应做法：
 
 **1. 用 Node.js 思维写 Worker**
 
@@ -318,7 +317,7 @@ AI 生成 Vite、React、Vue、Svelte、静态文档站或带 API 的前端项�
 #### <FileText class="svc-icon" /> Pages {#pages}
 面向前端项目的部署平台，主打 Git 集成、预览部署和静态站发布。
 
-连上 GitHub/GitLab 后，push 就能构建和发布，适合官网、博客、文档站、活动页、原型页面。Pages Functions 本质上也是 Workers 能力；如果你要的是“前端 + API + 多个绑定”一体化项目，现在更推荐看 Workers Static Assets。已有 Pages 项目、依赖预览部署和 Git 工作流时，继续用 Pages 也没问题。
+连上 GitHub/GitLab 后，push 就能构建和发布，适合官网、博客、文档站、活动页、原型页面。Pages Functions 也运行在 Workers 能力上；如果你要的是“前端 + API + 多个绑定”一体化项目，现在更推荐看 Workers Static Assets。已有 Pages 项目、依赖预览部署和 Git 工作流时，继续用 Pages 也没问题。
 
 #### <Boxes class="svc-icon" /> Durable Objects {#durable-objects}
 有状态对象，适合需要强一致协调、会话状态和 WebSocket 的场景。
@@ -343,7 +342,7 @@ AI 生成的业务经常不是一次请求能做完：先调 API，再写库，�
 #### <Clock class="svc-icon" /> Cron Triggers {#cron-triggers}
 按 cron 表达式定时触发 Worker 的计划任务。
 
-每小时同步一次数据、每天清理一次 D1、定时刷新缓存、周期性检查第三方 API，都可以用 Cron Triggers。它只负责“到点触发一次 Worker”；如果触发后要跑很多步骤、等待人工审批、失败后恢复上下文，就把真正流程放到 Workflows。
+每小时同步一次数据、每天清理一次 D1、定时刷新缓存、周期性检查第三方 API，都可以用 Cron Triggers。它只负责“到点触发一次 Worker”；如果触发后要跑很多步骤、等待人工审批、失败后恢复上下文，就把完整流程放到 Workflows。
 
 ### <Database class="cat-icon" /> 数据存储 {#数据存储}
 
@@ -423,7 +422,7 @@ Cloudflare 的 serverless AI 推理平台。
 #### <Network class="svc-icon" /> AI Gateway {#ai-gateway}
 AI API 的统一网关，负责观测、缓存、限流和成本控制。
 
-同时用 OpenAI、Anthropic、Workers AI、Groq、Mistral 这类 provider 时，不要让代码里散落一堆 API 调用，先接 AI Gateway。它能记录请求、看延迟和错误、做缓存、限流、重试、fallback，也能帮你控制花费。做 AI 应用时，这一层非常值钱：它不是模型本身，而是模型调用的控制台和保险丝。
+同时用 OpenAI、Anthropic、Workers AI、Groq、Mistral 这类 provider 时，不要让代码里散落一堆 API 调用，先接 AI Gateway。它统一记录请求、延迟和错误，并处理缓存、限流、重试、fallback 与成本控制，是模型调用的控制台和保险丝。
 
 #### <Scan class="svc-icon" /> Vectorize {#vectorize-ai}
 向量数据库，见数据存储。
@@ -464,7 +463,7 @@ flowchart TD
 #### <Radio class="svc-icon" /> Realtime {#realtime}
 实时音视频和低延迟通信能力。
 
-这一组对应 Dashboard 里的 Realtime，包括 RealtimeKit、TURN 服务器、无服务器 SFU、MoQ 中继等能力。做多人会议、语音房、直播连麦、实时互动时会碰到它。普通 WebSocket 协作先看 Workers + Durable Objects；真正涉及音视频链路、NAT 穿透、SFU 转发和低延迟媒体传输时，再进入 Realtime。
+这一组对应 Dashboard 里的 Realtime，包括 RealtimeKit、TURN 服务器、无服务器 SFU、MoQ 中继等能力。做多人会议、语音房、直播连麦、实时互动时会碰到它。普通 WebSocket 协作先看 Workers + Durable Objects；涉及音视频链路、NAT 穿透、SFU 转发和低延迟媒体传输时，再进入 Realtime。
 
 #### <MonitorPlay class="svc-icon" /> Browser Rendering {#browser-rendering}
 在 Workers 里调用无头浏览器进行渲染、截图和自动化。
@@ -487,7 +486,7 @@ flowchart TD
 #### <UserCheck class="svc-icon" /> Turnstile {#turnstile}
 Cloudflare 的验证码替代方案，用来判断请求是不是来自真实用户。
 
-登录、注册、评论、表单、试用申请都能接 Turnstile。它的思路不是逼用户选图，而是尽量在后台判断风险，必要时才让用户交互。接入时前端放 widget，后端校验 token；只在前端放组件但后端不验，等于没接。
+登录、注册、评论、表单、试用申请都能接 Turnstile。它尽量在后台判断风险，必要时才让用户交互。接入时前端放 widget，后端校验 token；只在前端放组件但后端不验，等于没接。
 
 #### <LockKeyhole class="svc-icon" /> Access {#access}
 Zero Trust 里的应用访问控制，给内部工具和后台加身份验证。
@@ -507,7 +506,7 @@ WAF 可以用托管规则、自定义规则、速率限制等方式处理 SQL �
 #### <Umbrella class="svc-icon" /> DDoS 防护 {#ddos-防护}
 Cloudflare 网络层和应用层的 DDoS 防护。
 
-Cloudflare 会在边缘网络自动吸收和缓解大量攻击流量，HTTP 层也有对应的检测和规则。大多数小项目不需要专门配置它；真正被打时，重点是确认域名已代理到 Cloudflare、源站 IP 没暴露、缓存和 WAF 策略没有把正常用户误伤。
+Cloudflare 会在边缘网络自动吸收和缓解大量攻击流量，HTTP 层也有对应的检测和规则。大多数小项目不需要专门配置它；遭遇攻击时，重点确认域名已代理到 Cloudflare、源站 IP 没暴露、缓存和 WAF 策略没有误伤正常用户。
 
 #### <Braces class="svc-icon" /> API Shield {#api-shield}
 面向 API 的安全能力集合，包括 schema 校验、mTLS、发现和滥用检测。
@@ -785,7 +784,7 @@ Workers 里的自定义指标和事件分析引擎。
 | R2 存 15 GB 图片 | 15 GB 存储 | **$5.00 + $0.075 R2**（R2 和 $5 套餐分开算，超出 10 GB 按 $0.015/GB） |
 | R2 存 50 GB + 200 万 A 类操作 | 50 GB / 200 万 A 类 | **$5.00 + $0.60 R2**（存储 $0.60 + A 类 $0.45 + B 类约 $0） |
 
-> 静态资源请求免费是 Workers Static Assets 的关键优势：只要把前端放在 Static Assets 上，只有真正调用 Worker 的动态请求才计费。
+> 静态资源请求免费是 Workers Static Assets 的关键优势：前端放在 Static Assets 上后，只有进入 Worker 的动态请求才计费。
 
 ### 什么时候升级
 
@@ -840,7 +839,7 @@ Workers 里的自定义指标和事件分析引擎。
 
 ## 4. 开源项目
 
-想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批真正使用 Cloudflare 能力、文档相对完整、仍有维护价值的开源项目。标「推荐」的是同类里优先看的那个。
+想自己搭网盘、图床、临时邮箱、短链或状态页，但不想从零写？这里按用途整理了一批实际使用 Cloudflare 能力、文档相对完整、仍有维护价值的开源项目。标「推荐」的是同类里优先看的那个。
 
 开源项目更适合拿来学架构和缩短起步时间，不等于可以不审代码直接上线。先看最近提交、部署文档、数据迁移和备份路径，再决定是直接用、二次开发，还是只吸收其中一个模块。
 
@@ -1225,7 +1224,7 @@ AI 看到 5xx 容易直接去改 Worker 代码，但 `522` 是源站问题、`10
 
    两种 DO ID 适合不同场景。`getByName(str)` 用字符串生成确定性 ID——同样的输入永远得到同样的 ID，适合"某房间 / 某用户"这种路由：你不需要存映射，算一下就找到。`newUniqueId()` 生成随机 ID，但你**必须自己存映射**（比如存 D1），否则再也找不到这个 DO。
 
-   另外一个容易误解的点：创建 stub（`env.NAMESPACE.get(id)`）不会实例化或唤醒 DO——它只是拿到一个引用。只有调用 stub 上的方法才会真正激活 DO。
+   另外一个容易误解的点：创建 stub（`env.NAMESPACE.get(id)`）不会实例化或唤醒 DO——它只是拿到一个引用。只有调用 stub 上的方法才会激活 DO。
 
    来源：[DO limits](https://developers.cloudflare.com/durable-objects/platform/limits/)
 
@@ -1551,7 +1550,7 @@ Cloudflare China Network 文档里专门有一页 [ICP](https://developers.cloud
 - **给关键资源设清楚的缓存策略**。Cache Rules 配好 TTL，HTML 短缓存、静态资源长缓存。
 - **用国内外多地监控看真实可用性，不只看自己电脑**。自己通不代表全国通。
 - **第三方 JS 做好降级**。Turnstile、Web Analytics 这种加载失败时不要把页面拖死。
-- **中国大陆是核心用户，准备国内镜像或符合要求的国内部署方案**。不要硬押一条海外线路。
+- **中国大陆是主要用户，准备国内镜像或符合要求的国内部署方案**。不要硬押一条海外线路。
 
 ### 常见症状 → 大概原因
 
@@ -1598,7 +1597,7 @@ Cloudflare China Network 文档里专门有一页 [ICP](https://developers.cloud
 - 第三方 JS（Turnstile、Analytics 等）做好降级处理，国内加载失败是常态而非例外。
 - 上线前使用多地拨测工具验证可用性，本地测试通过不代表全国可用。
 
-### 合规边界一句话
+### 合规边界
 
 ICP 备案、内容合规、数据出境是法律问题，不是 Cloudflare 能替你解决的。技术方案只回答“能不能访问”，不回答“该不该这么部署”。
 
@@ -1606,9 +1605,9 @@ ICP 备案、内容合规、数据出境是法律问题，不是 Cloudflare 能�
 
 ## 7. Cloudflare Agents {#cloudflare-agents}
 
-Cloudflare Agents 是让 AI Agent 长期在线的运行平台——有公网入口、有持久状态、能定时执行、能调用工具，空闲休眠、按需唤醒。在 AI 编程时代，你用 Claude Code / Codex 在本地把 Agent 写出来，部署到 Cloudflare 长期运行；而且部署上去的 Agent 本身可以是"云端版 Claude Code"（`@cloudflare/think`）。它和 Hermes（成品助理）、Pi（本地可改造工具箱）不是替代关系，而是分工。
+Cloudflare Agents 给 AI Agent 提供公网入口、持久状态、定时执行和工具调用，空闲时休眠，有请求时唤醒。可以在本地用 Claude Code 或 Codex 开发，再部署到 Cloudflare 长期运行；`@cloudflare/think` 还能把文件、技能和代码执行能力带到云端。Hermes、Pi 与它解决的问题不同，按场景分工即可。
 
-一句话记住：**把 Agent 从本地 demo，变成能长期在线服务用户的产品**——适合做个人助理、文档助手、AI 客服、编程 Agent、GitHub Repo 管家，独立开发者很值得看。
+**适合场景：**把本地 demo 部署成长期在线的个人助理、文档助手、AI 客服、编程 Agent 或 GitHub 仓库管家。
 
 详细内容见 → [Cloudflare Agents](/agents)
 
@@ -1618,7 +1617,7 @@ Cloudflare Agents 是让 AI Agent 长期在线的运行平台——有公网入�
 
 Cloudflare 只管 DNS 托管，不管买卖域名。域名在哪买、买什么后缀、买完怎么把 NS 指到 Cloudflare、要不要备案、要不要跨境转移——这一段单独拎成一篇子页讲清楚：比价的坑（**首年价 ≠ 续费价**）、各 TLD 的实务定位、改 NS 步骤、国内 vs 国外的差异、域名转移流程，以及 Cloudflare Registrar 不支持的后缀怎么兜底。
 
-一句话记住：**注册商去便宜的地方买（比续费价）、DNS 永远托管到 Cloudflare**，这两个动作可以拆开做。
+**操作建议：**注册商按续费价选择，DNS 独立托管到 Cloudflare；买域名和管 DNS 是两件事。
 
 详细内容见 → [域名购买、托管与转移](/domain)
 
@@ -1626,9 +1625,9 @@ Cloudflare 只管 DNS 托管，不管买卖域名。域名在哪买、买什么�
 
 ## 9. 邮件
 
-Cloudflare Email Service 把收发合在一个入口管——出站 Email Sending 支持 Workers Binding / REST API / SMTP 三种方式（Public Beta，需 Workers Paid），入站 Email Routing + Email Workers 已 GA、Free 可用。底层自动 DKIM/SPF/DMARC、托管 IP 声誉、退信指数退避、硬退信自动抑制，发给你已验证的目标地址在所有计划上免费。Email Workers 能直接调 R2、Queues、Workers AI，做"邮件即工单"或 AI 自动回复这条链路全在 Cloudflare 内闭环。
+Cloudflare Email Service 统一管理收发：出站 Email Sending 支持 Workers Binding、REST API 和 SMTP（Public Beta，需 Workers Paid）；入站 Email Routing 与 Email Workers 已 GA，Free 可用。平台负责 DKIM/SPF/DMARC、IP 声誉、退信重试和硬退信抑制。Email Workers 能直接调用 R2、Queues 和 Workers AI，适合做“邮件即工单”和 AI 自动回复。
 
-一句话记住：**新项目用 Workers Binding，旧系统用 SMTP（仅 465 Implicit TLS），接收端用 Email Workers + AI 做智能路由**，无需第三方邮件服务。
+**选型建议：**新项目用 Workers Binding，旧系统按需接 SMTP（仅 465 Implicit TLS），接收端用 Email Workers 处理路由和自动化。
 
 详细内容见 → [Cloudflare Email](/email)
 

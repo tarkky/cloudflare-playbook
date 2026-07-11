@@ -1,7 +1,6 @@
 ---
 title: 域名购买、托管与转移
 description: 域名比价、TLD 选择、Cloudflare DNS 托管、备案与跨境转移的实务指南。
-outline: deep
 ---
 
 <script setup>
@@ -32,7 +31,7 @@ import { Globe, ShoppingCart, Tags, Server, ArrowLeftRight, ShieldCheck, Plane }
 注册商定价一般长这样：
 
 - **首年促销价（first-year promo）**：新注册第一年很便宜，甚至 1 美元、9 块人民币。常见于 .com / .net / .xyz / .icu / .top。看价格别只看这一栏。
-- **续费价（renewal price）**：第二年起按正常价续费，通常是首年价的 3–10 倍。这是你真正长期成本。
+- **续费价（renewal price）**：第二年起按正常价续费，通常是首年价的 3–10 倍。这才是长期成本。
 - **转入价（transfer-in price）**：把域名从别家转过来时的价格，通常等于"1 年续费价 + 转移操作"。转移成功后注册期限自动延长 1 年，所以这一步等于"提前续费"。
 
 还要注意三类隐性成本：

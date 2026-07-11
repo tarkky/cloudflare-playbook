@@ -87,8 +87,9 @@
   stroke-width: 1.75;
 }
 
-.vp-doc p {
-  font-size: 15px;
+.vp-doc p,
+.vp-doc li {
+  font-size: 16px;
   line-height: 1.75;
 }
 
@@ -250,7 +251,7 @@
 
 .quick-grid span {
   color: var(--vp-c-text-2);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -280,8 +281,14 @@
 
 .scenario-card span {
   color: var(--vp-c-text-2);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
+}
+
+.VPNavScreenMenuGroupLink {
+  min-height: 44px;
+  line-height: 44px !important;
+  touch-action: manipulation;
 }
 
 .scenario-grid {
@@ -311,6 +318,22 @@
 
   .vp-doc h1 {
     font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .quick-grid a:hover,
+  .scenario-card:hover {
+    transform: none;
   }
 }
 

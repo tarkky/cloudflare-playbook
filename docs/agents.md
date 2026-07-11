@@ -1,7 +1,6 @@
 ---
 title: Cloudflare Agents
 description: 用 Cloudflare Agents SDK 构建有入口、有状态、能定时、可上线的长期运行 AI Agent。
-outline: deep
 ---
 
 <script setup>
@@ -11,7 +10,7 @@ import { Network, Cpu, Brain, BrainCircuit, Code, GitBranch, CircleCheck, Coins,
 <section class="onepage-hero">
   <p class="onepage-kicker">Cloudflare Playbook</p>
   <h1 class="onepage-title">Cloudflare Agents</h1>
-  <p class="onepage-subtitle">一次部署，常驻云端——无需值守，无请求时休眠待命，有消息时自动唤醒执行。</p>
+  <p class="onepage-subtitle">部署后常驻云端：无请求时休眠，有消息或定时任务时自动唤醒执行。</p>
 </section>
 
 <div class="quick-grid">
@@ -42,7 +41,7 @@ Cloudflare Agents 是 Cloudflare 的 AI Agent 运行平台。底层是 [Durable 
 
 部署一次就由 Cloudflare 全球网络承载，官方说能扩到数千万个实例。
 
-技术栈是 [Agents SDK](https://github.com/cloudflare/agents)，底层跑在 Durable Objects 上。SDK 现在已经长成一个完整生态（见下文 [Think：云端版 Claude Code](#think-云端版-claude-code) 和 [参考项目与生态](#参考项目与生态)），不只是早期的裸 Agent 类。
+技术栈是 [Agents SDK](https://github.com/cloudflare/agents)，底层跑在 Durable Objects 上。除基础 Agent 类外，SDK 现在还覆盖 Think、聊天、工具、调度和多种通信入口（见下文 [Think：云端版 Claude Code](#think-云端版-claude-code) 和 [参考项目与生态](#参考项目与生态)）。
 
 官网把一个 Agent 的结构归纳成四层，理解这四层就知道它长什么样：
 
@@ -61,7 +60,7 @@ flowchart TD
 
 ## 与同类工具的定位差异
 
-几样东西名字都带 Agent，但定位完全不同，**不是替代关系，是分工关系**。
+这些产品都带 Agent 名称，但解决的问题不同。下面按运行位置、状态和交付方式区分。
 
 | 工具 | 在哪跑 | 有公网入口 | 有长期状态/记忆 | 能定时 | 主线定位 |
 | --- | --- | --- | --- | --- | --- |
@@ -87,7 +86,7 @@ flowchart TD
 
 > Think 目前标记为 Experimental，API 稳定但毕业前可能调整。下面的判断建立在这个前提上：选型时把它当"值得押注但要做好 API 可能变"的东西，详见 [Think 文档](https://developers.cloudflare.com/agents/api-reference/think/) 和 [think 包 README](https://github.com/cloudflare/agents/tree/main/packages/think)。
 
-`@cloudflare/think` 是 Agents SDK 里的一个高层基类。它本质是"云端版 Claude Code / Codex"——把本地编程 Agent 的核心能力搬到了云端，再加长期在线、公网入口、定时任务、部署恢复。
+`@cloudflare/think` 是 Agents SDK 里的高层基类，可以看作带持久状态和公网入口的云端编程 Agent：文件读写、技能和代码执行都在云端运行，并支持定时任务与部署恢复。
 
 ### 与 Claude Code / Codex 的能力对照
 
@@ -130,7 +129,7 @@ Claude Code / Codex 是你本地的工具，关了就停；Think 是部署在 Cl
 - **Sessions**：树状历史，支持分支、压缩、全文检索，而不只是一个消息列表。对话一长，线性列表既占 token 又没法检索，压缩和分支是省 token 的关键。
 - **Human-in-the-loop**：一个 turn 能为审批或浏览器端工具暂停，稍后恢复，不会变成卡死的请求。有写操作的 Agent 不加这个，审批就只能靠人盯，请求会一直挂着超时。
 - **Messengers**：接 Telegram（Slack/Discord 在路上），每个 Chat SDK 线程跑在自己的 Think 子 Agent 里，避免上下文串线。一个 Agent 服务多个人时，不隔离就会把 A 的对话漏给 B。
-- **Workspace + Skills + Code execution**：虚拟文件系统、Agent Skills 目录、`codemode` 沙箱执行——云端 Claude Code 的那套能力。下面单独讲 `codemode` 和 `extensions`，因为这是 Think 区别于"调一次 LLM"的本质。
+- **Workspace + Skills + Code execution**：虚拟文件系统、Agent Skills 目录、`codemode` 沙箱执行——云端 Claude Code 的那套能力。下面单独讲 `codemode` 和 `extensions`，这是 Think 与单次模型调用最明显的差别。
 
 ### codemode 和 extensions：Agent 自己给自己写代码
 
@@ -211,7 +210,7 @@ think-starters 之外，还有三类典型场景有对应的官方实现：
 
 ## 一个人，以前做不到现在能做到
 
-这一节是给独立开发者看的。Cloudflare Agents 真正的价值不在"又一个跑 LLM 的地方"，而在"一个人现在能做到以前只有团队才做的事"。
+这一节面向独立开发者。Cloudflare Agents 把状态、调度、工具和部署放进同一套运行环境，让一个人也能维护长期在线的 Agent 产品。
 
 **以前做一个 24 小时在线的 Agent 要什么：** 租一台 VPS 或小服务器、写守护进程保证它不挂、自己搭 cron 跑定时任务、自己用文件或数据库存对话状态、自己接 webhook 处理入口、自己处理重启后状态恢复、自己管 SSL 和域名、月底盯着服务器账单。这些活加起来，往往比写 Agent 本身还多。一个人做兼职项目，光是"让它稳定在线"这一摊就能耗掉所有精力。
 
@@ -225,7 +224,7 @@ think-starters 之外，还有三类典型场景有对应的官方实现：
 
 ## 本地 ↔ 云端：Agent 时代的协作工作流
 
-Agent 时代出现了一个新的协作结构：**人在本地写代码，Agent 在云端长期跑**。这不是"部署完就走"的传统模式，而是两条线一直配合。
+常见协作方式是：**人在本地写代码，Agent 在云端长期跑**。本地持续修改和发布，云端负责状态、任务和用户请求，两条线长期配合。
 
 **第一条线：本地 Claude Code ↔ 云端 Think 的开发循环。**
 
@@ -248,13 +247,13 @@ Agent 时代出现了一个新的协作结构：**人在本地写代码，Agent 
 - **人在本地**：写 Agent 的骨架、定 system prompt、审 Agent 自己写的代码、决定要不要让某个 extension 上线。
 - **Agent 在云端**：长期在线服务用户、定时干活、遇到能力空白自己补、出问题被本地重新部署修复。
 
-两条线合起来，人的角色偏向"定方向、审结果"，写代码的不只是你——Agent 在云端也会自己写、自己扩。这和"本地跑一次 LLM 拿个回答"已经不是一回事。
+两条线合起来，人的角色偏向“定方向、审结果”；Agent 在云端执行任务、写临时代码并扩展工具。它承担的是持续运行的产品任务，而非一次模型回答。
 
 ---
 
 ## 从自用到收费
 
-独立开发者的真实路径不是"做完一个 Agent 就结束"，而是从自用慢慢走到能收费。这条路径上每一步该加什么：
+独立开发者通常会从自用开始，再逐步开放给朋友和付费用户。每个阶段需要增加的能力不同：
 
 **第一步：自用。** 不加登录、不接多渠道，纯网页聊天或 Telegram 单人用。目标是自己用得顺手、验证这个工作流真的有价值。这一步用 Free 额度大概率够，见 [成本与计费](#成本与计费)。
 
@@ -356,7 +355,7 @@ AI 编程工具写得好不好，很看它能不能读到准确的官方资料�
 
 [Agents examples](https://developers.cloudflare.com/agents/examples/chat-agent/) 文档区有 30+ 完整示例，挑最像真实产品的几个重点看：
 
-**5. [Agentic Inbox](https://github.com/cloudflare/agentic-inbox)（最像真实产品的官方案例）** —— Cloudflare 官方开源的自托管邮件客户端，整个跑在 Workers 上。收信走 Email Routing，每个邮箱一个独立 Durable Object + SQLite，附件放 R2，AI Agent 有 9 个邮件工具。想看"Cloudflare Agents 能不能做真实产品而不只是聊天 demo"，看这个。
+**5. [Agentic Inbox](https://github.com/cloudflare/agentic-inbox)（完整产品案例）** —— Cloudflare 官方开源的自托管邮件客户端，整个跑在 Workers 上。收信走 Email Routing，每个邮箱一个独立 Durable Object + SQLite，附件放 R2，AI Agent 有 9 个邮件工具。它适合用来观察 Cloudflare Agents 如何承载聊天之外的真实产品流程。
 
 **6. [Email Agent](https://developers.cloudflare.com/agents/examples/email-agent/)（邮件工作流基础）** —— 官方文档讲 Agents 如何收发邮件、路由 inbound、处理 follow-up。想做邮件助理，先看这个打基础，再看 Agentic Inbox 看完整产品。
 
