@@ -1,5 +1,13 @@
 # Cloudflare 实战手册
 
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/realchendahuang/cloudflare-playbook?style=social)](https://github.com/realchendahuang/cloudflare-playbook)
+[![GitHub forks](https://img.shields.io/github/forks/realchendahuang/cloudflare-playbook?style=social)](https://github.com/realchendahuang/cloudflare-playbook/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/realchendahuang/cloudflare-playbook)](https://github.com/realchendahuang/cloudflare-playbook/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/realchendahuang/cloudflare-playbook/pulls)
+[![Follow @realchendahuang](https://img.shields.io/badge/Follow-%40realchendahuang-1DA1F2?logo=x&logoColor=white)](https://x.com/realchendahuang)
+
 AI 编程时代的 Cloudflare 实战手册——用 AI 写代码，用 Cloudflare 部署到全球。
 
 在线阅读：[chendahuang.com/playbook/cloudflare](https://chendahuang.com/playbook/cloudflare/)
